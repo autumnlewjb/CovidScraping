@@ -41,8 +41,8 @@ for tr in row:
         data_input = str(row[1]) + ","
         f.write(data_input)
 
-if not(f.closed):
+if not f.closed:
     print("Web Scrapping done...")
-    print("Data saved to %s" % (file))
+    print("Data saved to %s" % file)
     f.close()
 sleep(3)
