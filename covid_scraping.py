@@ -5,6 +5,9 @@ import time
 
 from bs4 import BeautifulSoup as bs
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 
 
 def identify_iframe(tag):
@@ -16,6 +19,7 @@ def identify_iframe(tag):
 class ScrapeCovid:
     def __init__(self):
         self.driver = None
+        self._driver_wait = WebDriverWait(self.driver, 30)
         self.url = 'http://covid-19.moh.gov.my/'
         self.soup = None
         self.date = None
@@ -55,7 +59,7 @@ class ScrapeCovid:
         print(iframe)
 
         self.driver.get(str(iframe.get('src')))
-        sleep(3)
+        self._driver_wait.until(EC.presence_of_element_located((By.XPATH, "//h2/div/span/span")))
         info = self.driver.find_elements_by_xpath('//h2/div/span/span')
 
         result = list()
@@ -75,7 +79,6 @@ class ScrapeCovid:
 
         print("Web Scrapping done...")
         print("Data saved to %s" % self.output_file)
-        sleep(3)
 
 
 if __name__ == '__main__':
@@ -83,4 +86,4 @@ if __name__ == '__main__':
     obj = ScrapeCovid()
     obj.main()
     print(time.time() - start_time)
-    # TODO: script running slow 48s
+    # TODO: script running slow 19s
