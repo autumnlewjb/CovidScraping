@@ -1,7 +1,43 @@
-from bs4 import BeautifulSoup
+import re
+
+from bs4 import BeautifulSoup as bs
 import urllib.request
 from time import sleep
 from datetime import datetime
+
+import requests
+from selenium import webdriver
+
+opt = webdriver.ChromeOptions()
+opt.add_argument('--no-sandbox')
+opt.add_argument('--headless')
+
+
+def identify_iframe(tag):
+    source = str(tag.get('src'))
+    regex = re.compile(r"https://e.infogram.com/\S*")
+    return tag.name == 'iframe' and regex.search(source) and tag.get('title') == 'Copy: S: Dashboard Ringkas'
+
+
+file = "latest_covid_cases.csv"
+f = open(file, 'a+')
+browser = webdriver.Chrome(options=opt)
+browser.get('http://covid-19.moh.gov.my/')
+page_source = browser.page_source
+soup = bs(page_source, 'lxml')
+
+iframe = soup.find(identify_iframe)
+print(iframe)
+
+browser.get(str(iframe.get('src')))
+info = browser.find_elements_by_xpath('//h2/div/span/span')
+
+tmp_list = list()
+
+for i in info:
+    tmp = i.text
+    if re.match(r"[0-9]+", tmp):
+        tmp_list.append(tmp)
 
 current = datetime.now()
 day = current.day
@@ -10,36 +46,7 @@ year = current.year
 
 date = "{}/{}/{}".format(day, month, year)
 
-
-file = "latest_covid_cases.csv"
-f = open(file, 'a+')
-f.write("\n" + date + ",")
-source = urllib.request.urlopen("http://www.moh.gov.my/index.php/pages/view/2019-ncov-wuhan").read()
-soup = BeautifulSoup(source, 'lxml')
-
-section1 = soup.body
-titles = []
-title = ""
-
-for elements in section1.find_all("h3"):
-    titles.append(elements.text)
-
-
-if len(titles) == 1:
-    title = titles[0].replace(",", "->").strip()
-
-# f.write(str(title) + "\n")
-section2 = soup.center
-# print(section2)
-table = section2.find('table')
-row = table.find_all('tr')
-
-for tr in row:
-    td = tr.find_all('td')
-    row = [i.text for i in td]
-    if len(row) == 2:
-        data_input = str(row[1]) + ","
-        f.write(data_input)
+f.write("\n{}, {}, {}, ".format(date, tmp_list[-1], tmp_list[0]))
 
 if not f.closed:
     print("Web Scrapping done...")
