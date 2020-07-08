@@ -50,7 +50,7 @@ class ScrapeCovid:
         self._date = "{}/{}/{}".format(day, month, year)
 
     def get_numbers(self):
-        self.driver.get('http://covid-19.moh.gov.my/')
+        self.driver.get(self.url)
         page_source = self.driver.page_source
         self.soup = bs(page_source, 'lxml')
 
