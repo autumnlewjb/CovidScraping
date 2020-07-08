@@ -1,16 +1,10 @@
 import re
+from datetime import datetime
+from time import sleep
+import time
 
 from bs4 import BeautifulSoup as bs
-import urllib.request
-from time import sleep
-from datetime import datetime
-
-import requests
 from selenium import webdriver
-
-opt = webdriver.ChromeOptions()
-opt.add_argument('--no-sandbox')
-opt.add_argument('--headless')
 
 
 def identify_iframe(tag):
@@ -19,37 +13,74 @@ def identify_iframe(tag):
     return tag.name == 'iframe' and regex.search(source) and tag.get('title') == 'Copy: S: Dashboard Ringkas'
 
 
-file = "latest_covid_cases.csv"
-f = open(file, 'a+')
-browser = webdriver.Chrome(options=opt)
-browser.get('http://covid-19.moh.gov.my/')
-page_source = browser.page_source
-soup = bs(page_source, 'lxml')
+class ScrapeCovid:
+    def __init__(self):
+        self.driver = None
+        self.url = 'http://covid-19.moh.gov.my/'
+        self.soup = None
+        self.date = None
+        self.output_file = "latest_covid_cases.csv"
 
-iframe = soup.find(identify_iframe)
-print(iframe)
+    @property
+    def driver(self):
+        return self._driver
 
-browser.get(str(iframe.get('src')))
-info = browser.find_elements_by_xpath('//h2/div/span/span')
+    @driver.setter
+    def driver(self, value):
+        opt = webdriver.ChromeOptions()
+        opt.add_argument('--no-sandbox')
+        opt.add_argument('--headless')
+        opt.add_argument('--disable-gpu')
+        self._driver = webdriver.Chrome(options=opt)
 
-tmp_list = list()
+    @property
+    def date(self):
+        return self._date
 
-for i in info:
-    tmp = i.text
-    if re.match(r"[0-9]+", tmp):
-        tmp_list.append(tmp)
+    @date.setter
+    def date(self, value):
+        current = datetime.now()
+        day = current.day
+        month = current.month
+        year = current.year
 
-current = datetime.now()
-day = current.day
-month = current.month
-year = current.year
+        self._date = "{}/{}/{}".format(day, month, year)
 
-date = "{}/{}/{}".format(day, month, year)
+    def get_numbers(self):
+        self.driver.get('http://covid-19.moh.gov.my/')
+        page_source = self.driver.page_source
+        self.soup = bs(page_source, 'lxml')
 
-f.write("\n{}, {}, {}, ".format(date, tmp_list[-1], tmp_list[0]))
+        iframe = self.soup.find(identify_iframe)
+        print(iframe)
 
-if not f.closed:
-    print("Web Scrapping done...")
-    print("Data saved to %s" % file)
-    f.close()
-sleep(3)
+        self.driver.get(str(iframe.get('src')))
+        sleep(3)
+        info = self.driver.find_elements_by_xpath('//h2/div/span/span')
+
+        result = list()
+
+        for i in info:
+            tmp = i.text
+            if re.match(r"[0-9]+", tmp):
+                result.append(tmp)
+
+        return result
+
+    def main(self):
+        tmp_list = self.get_numbers()
+        with open(self.output_file, 'a+') as f:
+            if tmp_list:
+                f.write("\n{}, {}, {}, ".format(self.date, tmp_list[-1], tmp_list[0]))
+
+        print("Web Scrapping done...")
+        print("Data saved to %s" % self.output_file)
+        sleep(3)
+
+
+if __name__ == '__main__':
+    start_time = time.time()
+    obj = ScrapeCovid()
+    obj.main()
+    print(time.time() - start_time)
+    # TODO: script running slow 48s
