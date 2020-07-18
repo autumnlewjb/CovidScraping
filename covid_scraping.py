@@ -55,7 +55,6 @@ class ScrapeCovid:
         self.soup = bs(page_source, 'lxml')
 
         iframe = self.soup.find(identify_iframe)
-        print(iframe)
 
         self.driver.get(str(iframe.get('src')))
         self._driver_wait.until(EC.presence_of_element_located((By.XPATH, "//h2/div/span/span")))
@@ -84,5 +83,5 @@ if __name__ == '__main__':
     start_time = time.time()
     obj = ScrapeCovid()
     obj.main()
-    print(time.time() - start_time)
+    print(time.time() - start_time, 's')
     # TODO: script running slow 19s
