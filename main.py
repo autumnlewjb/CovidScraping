@@ -22,7 +22,7 @@ class ScrapeCovid:
         self.url = 'http://covid-19.moh.gov.my/'
         self.soup = None
         self.date = None
-        self.output_file = "latest_covid_cases.csv"
+        self.output_file = "output.csv"
 
     @property
     def driver(self):
